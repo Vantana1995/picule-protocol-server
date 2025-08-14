@@ -157,16 +157,6 @@ curl http://localhost:3001/api/stats/cache
 
 ## 🏭 Production Deployment
 
-### Oracle Cloud Free Tier
-
-1. Create Ubuntu instance
-2. Install Node.js 16+
-3. Clone repository
-4. Update configuration files
-5. Install PM2 for process management
-6. Configure firewall (port 3001)
-7. Set up reverse proxy (Nginx)
-
 ### Environment Setup
 
 ```bash
