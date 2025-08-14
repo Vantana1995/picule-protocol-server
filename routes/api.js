@@ -1,0 +1,356 @@
+const express = require("express");
+const cacheManager = require("../cache/manager");
+const incrementalUpdater = require("../cache/incrementalUpdater");
+const logger = require("../utils/logger");
+const { checkAdminAccess } = require("../middleware/cors");
+const router = express.Router();
+
+// Middleware to log all API requests
+router.use((req, res, next) => {
+  logger.server.request(req.method, req.url, req.ip);
+  next();
+});
+
+// Middleware to check if cache is ready
+const checkCacheReady = (req, res, next) => {
+  if (!cacheManager.isReady()) {
+    return res.status(503).json({
+      error: "Service Unavailable",
+      message: "Cache is not ready yet, please try again in a few seconds",
+      ready: false,
+    });
+  }
+  next();
+};
+
+// Helper function to send successful response
+const sendSuccess = (res, data, message = "Success") => {
+  res.json({
+    success: true,
+    message,
+    data,
+    timestamp: new Date().toISOString(),
+  });
+};
+
+// Helper function to send error response
+const sendError = (res, statusCode, message, details = null) => {
+  logger.error(`API Error: ${message}`, details);
+  res.status(statusCode).json({
+    success: false,
+    error: message,
+    details,
+    timestamp: new Date().toISOString(),
+  });
+};
+
+// ============ ICO ENDPOINTS ============
+
+// Get all ICO requests
+router.get("/ico-requests", checkCacheReady, (req, res) => {
+  try {
+    const { active, recent, limit } = req.query;
+    let data = cacheManager.get("icoRequests");
+
+    // Filter by active status
+    if (active !== undefined) {
+      const isActive = active === "true";
+      data = data.filter((ico) => ico.active === isActive);
+    }
+
+    // Get recent items
+    if (recent === "true") {
+      const limitNum = parseInt(limit) || 20;
+      data = data
+        .sort((a, b) => parseInt(b.createdAt) - parseInt(a.createdAt))
+        .slice(0, limitNum);
+    }
+
+    sendSuccess(res, data, `Retrieved ${data.length} ICO requests`);
+  } catch (error) {
+    sendError(res, 500, "Failed to get ICO requests", error.message);
+  }
+});
+
+// Get specific ICO request
+router.get("/ico-requests/:id", checkCacheReady, (req, res) => {
+  try {
+    const ico = cacheManager.getById("icoRequests", req.params.id);
+
+    if (!ico) {
+      return sendError(res, 404, "ICO request not found");
+    }
+
+    sendSuccess(res, ico);
+  } catch (error) {
+    sendError(res, 500, "Failed to get ICO request", error.message);
+  }
+});
+
+// Get all contributions
+router.get("/contributions", checkCacheReady, (req, res) => {
+  try {
+    const { icoId, recent, limit } = req.query;
+    let data = cacheManager.get("contributions");
+
+    // Filter by ICO ID
+    if (icoId) {
+      data = data.filter(
+        (contribution) => contribution.icoRequest.numOfRequest === icoId
+      );
+    }
+
+    // Get recent contributions
+    if (recent === "true") {
+      const limitNum = parseInt(limit) || 50;
+      data = data
+        .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
+        .slice(0, limitNum);
+    }
+
+    sendSuccess(res, data, `Retrieved ${data.length} contributions`);
+  } catch (error) {
+    sendError(res, 500, "Failed to get contributions", error.message);
+  }
+});
+
+// ============ PROJECT ENDPOINTS ============
+
+// Get all projects
+router.get("/projects", checkCacheReady, (req, res) => {
+  try {
+    const { recent, limit } = req.query;
+    let data = cacheManager.get("projects");
+
+    if (recent === "true") {
+      const limitNum = parseInt(limit) || 20;
+      data = data
+        .sort((a, b) => parseInt(b.createdAt) - parseInt(a.createdAt))
+        .slice(0, limitNum);
+    }
+
+    sendSuccess(res, data, `Retrieved ${data.length} projects`);
+  } catch (error) {
+    sendError(res, 500, "Failed to get projects", error.message);
+  }
+});
+
+// Get specific project
+router.get("/projects/:id", checkCacheReady, (req, res) => {
+  try {
+    const project = cacheManager.getById("projects", req.params.id);
+
+    if (!project) {
+      return sendError(res, 404, "Project not found");
+    }
+
+    sendSuccess(res, project);
+  } catch (error) {
+    sendError(res, 500, "Failed to get project", error.message);
+  }
+});
+
+// ============ MARKETPLACE ENDPOINTS ============
+
+// Get all listings
+router.get("/listings", checkCacheReady, (req, res) => {
+  try {
+    const { active, recent, limit } = req.query;
+    let data = cacheManager.get("listings");
+
+    // Filter by active status
+    if (active !== undefined) {
+      const isActive = active === "true";
+      data = data.filter((listing) => listing.active === isActive);
+    }
+
+    // Get recent listings
+    if (recent === "true") {
+      const limitNum = parseInt(limit) || 20;
+      data = data
+        .sort((a, b) => parseInt(b.createdAt) - parseInt(a.createdAt))
+        .slice(0, limitNum);
+    }
+
+    sendSuccess(res, data, `Retrieved ${data.length} listings`);
+  } catch (error) {
+    sendError(res, 500, "Failed to get listings", error.message);
+  }
+});
+
+// Get all sales
+router.get("/sales", checkCacheReady, (req, res) => {
+  try {
+    const { recent, limit } = req.query;
+    let data = cacheManager.get("sales");
+
+    if (recent === "true") {
+      const limitNum = parseInt(limit) || 20;
+      data = data
+        .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp))
+        .slice(0, limitNum);
+    }
+
+    sendSuccess(res, data, `Retrieved ${data.length} sales`);
+  } catch (error) {
+    sendError(res, 500, "Failed to get sales", error.message);
+  }
+});
+
+// ============ DEX ENDPOINTS ============
+
+// Get all tokens
+router.get("/tokens", checkCacheReady, (req, res) => {
+  try {
+    const data = cacheManager.get("tokens");
+    sendSuccess(res, data, `Retrieved ${data.length} tokens`);
+  } catch (error) {
+    sendError(res, 500, "Failed to get tokens", error.message);
+  }
+});
+
+// Get all pairs
+router.get("/pairs", checkCacheReady, (req, res) => {
+  try {
+    const data = cacheManager.get("pairs");
+    sendSuccess(res, data, `Retrieved ${data.length} pairs`);
+  } catch (error) {
+    sendError(res, 500, "Failed to get pairs", error.message);
+  }
+});
+
+// ============ STATS ENDPOINTS ============
+
+// Get global stats
+router.get("/stats/global", checkCacheReady, (req, res) => {
+  try {
+    const data = cacheManager.get("globalStats");
+    sendSuccess(res, data);
+  } catch (error) {
+    sendError(res, 500, "Failed to get global stats", error.message);
+  }
+});
+
+// Get marketplace stats
+router.get("/stats/marketplace", checkCacheReady, (req, res) => {
+  try {
+    const data = cacheManager.get("marketplaceStats");
+    sendSuccess(res, data);
+  } catch (error) {
+    sendError(res, 500, "Failed to get marketplace stats", error.message);
+  }
+});
+
+// Get cache stats
+router.get("/stats/cache", (req, res) => {
+  try {
+    const data = cacheManager.getStats();
+    sendSuccess(res, data);
+  } catch (error) {
+    sendError(res, 500, "Failed to get cache stats", error.message);
+  }
+});
+
+// ============ UTILITY ENDPOINTS ============
+
+// Get all data at once
+router.get("/all", checkCacheReady, (req, res) => {
+  try {
+    const data = cacheManager.getAll();
+    sendSuccess(res, data, `Retrieved all cached data`);
+  } catch (error) {
+    sendError(res, 500, "Failed to get all data", error.message);
+  }
+});
+
+// Health check endpoint
+router.get("/health", (req, res) => {
+  try {
+    const healthReport = incrementalUpdater.getHealthReport();
+
+    if (healthReport.healthy) {
+      res.json({
+        status: "healthy",
+        ...healthReport,
+        uptime: process.uptime(),
+      });
+    } else {
+      res.status(503).json({
+        status: "unhealthy",
+        ...healthReport,
+        uptime: process.uptime(),
+      });
+    }
+  } catch (error) {
+    sendError(res, 500, "Health check failed", error.message);
+  }
+});
+
+// Force refresh endpoint (admin only)
+router.post("/admin/refresh", async (req, res) => {
+  try {
+    logger.info("Force refresh requested via API");
+    const success = await incrementalUpdater.forceRefresh();
+
+    if (success) {
+      sendSuccess(res, null, "Cache refresh completed successfully");
+    } else {
+      sendError(res, 500, "Cache refresh failed");
+    }
+  } catch (error) {
+    sendError(res, 500, "Force refresh failed", error.message);
+  }
+});
+
+// Manual update trigger (admin only)
+router.post("/admin/update", async (req, res) => {
+  try {
+    logger.info("Manual update requested via API");
+    const success = await incrementalUpdater.triggerUpdate();
+
+    if (success) {
+      sendSuccess(res, null, "Manual update completed successfully");
+    } else {
+      sendError(res, 500, "Manual update failed");
+    }
+  } catch (error) {
+    sendError(res, 500, "Manual update failed", error.message);
+  }
+});
+
+// Get updater status
+router.get("/status", (req, res) => {
+  try {
+    const status = incrementalUpdater.getStatus();
+    sendSuccess(res, status);
+  } catch (error) {
+    sendError(res, 500, "Failed to get status", error.message);
+  }
+});
+router.post("/admin/whitelist/add", checkAdminAccess, (req, res) => {
+  const { origin } = req.body;
+
+  if (!origin) {
+    return sendError(res, 400, "Origin is required");
+  }
+
+  allowedOrigins.push(origin);
+  logger.info(`Added origin to whitelist: ${origin}`);
+
+  sendSuccess(res, { allowedOrigins }, "Origin added to whitelist");
+});
+router.get("/admin/whitelist", checkAdminAccess, (req, res) => {
+  sendSuccess(res, { allowedOrigins });
+});
+router.delete("/admin/whitelist/:origin", checkAdminAccess, (req, res) => {
+  const origin = decodeURIComponent(req.params.origin);
+  const index = allowedOrigins.indexOf(origin);
+
+  if (index > -1) {
+    allowedOrigins.splice(index, 1);
+    sendSuccess(res, null, "Origin removed from whitelist");
+  } else {
+    sendError(res, 404, "Origin not found");
+  }
+});
+module.exports = router;
