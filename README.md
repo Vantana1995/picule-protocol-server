@@ -17,7 +17,7 @@ Revolutionary value-backed NFTs with permanently locked liquidity that eliminate
 
 ```bash
 # Clone repository
-git clone https://[github.com/Vantana1995/picule-protocol-server]
+git clone https://github.com/Vantana1995/picule-protocol-server
 cd picule-server
 
 # Install dependencies
