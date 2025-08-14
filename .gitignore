@@ -5,4 +5,3 @@ logs/
 *.log
 middleware/
 config/
-config/
