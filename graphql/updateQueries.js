@@ -12,7 +12,7 @@ const GET_UPDATES_FROM_BLOCK = `
     
 
     # New ICO requests since fromBlock
-    icorequests(where: { transaction_: { blockNumber_gt: $fromBlock } }, orderBy: createdAt, orderDirection: desc) {
+   icorequests(where: { createdAt_gt: $fromBlock }, orderBy: createdAt, orderDirection: desc) {
       id
       numOfRequest
       creator {
@@ -30,7 +30,7 @@ const GET_UPDATES_FROM_BLOCK = `
     }
 
     # New contributions since fromBlock
-    contributions(where: { transaction_: { blockNumber_gt: $fromBlock } }, orderBy: timestamp, orderDirection: desc) {
+    contributions(where: { timestamp_gt: $fromBlock }, orderBy: timestamp, orderDirection: desc) {
       id
       icoRequest {
         id
@@ -50,7 +50,7 @@ const GET_UPDATES_FROM_BLOCK = `
     }
 
     # New projects since fromBlock
-    projects(where: { transaction_: { blockNumber_gt: $fromBlock } }, orderBy: createdAt, orderDirection: desc) {
+    projects(where: { createdAt_gt: $fromBlock }, orderBy: createdAt, orderDirection: desc) {
       id
       icoId
       creator {
@@ -81,7 +81,7 @@ const GET_UPDATES_FROM_BLOCK = `
     }
 
     # New marketplace listings since fromBlock
-    listings(where: { createdAt_gt: $fromBlock }, orderBy: createdAt, orderDirection: desc) {
+   listings(where: { createdAt_gt: $fromBlock }, orderBy: createdAt, orderDirection: desc) {
       id
       seller {
         id
@@ -100,7 +100,7 @@ const GET_UPDATES_FROM_BLOCK = `
     }
 
     # New sales since fromBlock
-    sales(where: { transaction_: { blockNumber_gt: $fromBlock } }, orderBy: timestamp, orderDirection: desc) {
+    sales(where: { timestamp_gt: $fromBlock }, orderBy: timestamp, orderDirection: desc) {
       id
       seller {
         id
@@ -133,7 +133,7 @@ const GET_UPDATES_FROM_BLOCK = `
     }
 
     # New pairs since fromBlock
-    pairs(where: { createdAtBlockNumber_gt: $fromBlock }, orderBy: createdAtTimestamp, orderDirection: desc) {
+   pairs(where: { createdAtBlockNumber_gt: $fromBlock }, orderBy: createdAtTimestamp, orderDirection: desc) {
       id
       token0 {
         id
@@ -156,15 +156,18 @@ const GET_UPDATES_FROM_BLOCK = `
       createdAtTimestamp
       createdAtBlockNumber
     }
-      # Updated accounts (those with recent activity)
-    accounts(where: { 
-      or: [
-        { contributions_: { transaction_: { blockNumber_gt: $fromBlock } } },
-        { salesAsBuyer_: { transaction_: { blockNumber_gt: $fromBlock } } },
-        { salesAsSeller_: { transaction_: { blockNumber_gt: $fromBlock } } },
-        { icoRequests_: { transaction_: { blockNumber_gt: $fromBlock } } }
-      ]
-    }) {
+   # Accounts with recent activity
+    accounts(
+      where: {
+        or: [
+          { contributions_: { timestamp_gt: $fromBlock } },
+          { salesAsBuyer_: { timestamp_gt: $fromBlock } },
+          { salesAsSeller_: { timestamp_gt: $fromBlock } },
+          { icoRequests_: { createdAt_gt: $fromBlock } }
+        ]
+      },
+      first: 1000
+    ) {
       id
       usdSwapped
       liquidityPositions {
@@ -202,6 +205,10 @@ const GET_UPDATES_FROM_BLOCK = `
       createdProjects {
         id
         icoId
+      }
+      bonusClaims {
+        id
+        amount1
       }
     }
   }
