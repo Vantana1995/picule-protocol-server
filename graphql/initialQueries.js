@@ -203,6 +203,51 @@ const GET_ALL_INITIAL_DATA = `
       totalLiquidityMON
       txCount
     }
+      # Account data
+    accounts(first: $first, orderBy: usdSwapped, orderDirection: desc) {
+      id
+      usdSwapped
+      liquidityPositions {
+        id
+        liquidityTokenBalance
+      }
+      ERC721tokens {
+        id
+        identifier
+      }
+      listings {
+        id
+        price
+        active
+      }
+      salesAsBuyer {
+        id
+        price
+      }
+      salesAsSeller {
+        id
+        price
+      }
+      contributions {
+        id
+        amount
+        icoRequest {
+          numOfRequest
+        }
+      }
+      icoRequests {
+        id
+        numOfRequest
+      }
+      createdProjects {
+        id
+        icoId
+      }
+      bonusClaims {
+        id
+        amount1
+      }
+    }
   }
 `;
 module.exports = {

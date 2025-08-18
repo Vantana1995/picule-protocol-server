@@ -156,6 +156,54 @@ const GET_UPDATES_FROM_BLOCK = `
       createdAtTimestamp
       createdAtBlockNumber
     }
+      # Updated accounts (those with recent activity)
+    accounts(where: { 
+      or: [
+        { contributions_: { transaction_: { blockNumber_gt: $fromBlock } } },
+        { salesAsBuyer_: { transaction_: { blockNumber_gt: $fromBlock } } },
+        { salesAsSeller_: { transaction_: { blockNumber_gt: $fromBlock } } },
+        { icoRequests_: { transaction_: { blockNumber_gt: $fromBlock } } }
+      ]
+    }) {
+      id
+      usdSwapped
+      liquidityPositions {
+        id
+        liquidityTokenBalance
+      }
+      ERC721tokens {
+        id
+        identifier
+      }
+      listings {
+        id
+        price
+        active
+      }
+      salesAsBuyer {
+        id
+        price
+      }
+      salesAsSeller {
+        id
+        price
+      }
+      contributions {
+        id
+        amount
+        icoRequest {
+          numOfRequest
+        }
+      }
+      icoRequests {
+        id
+        numOfRequest
+      }
+      createdProjects {
+        id
+        icoId
+      }
+    }
   }
 `;
 

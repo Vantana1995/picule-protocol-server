@@ -19,6 +19,9 @@ class CacheManager {
       tokens: [],
       pairs: [],
 
+      // Account data
+      accounts: [],
+
       // Stats
       globalStats: null,
       marketplaceStats: null,
@@ -42,6 +45,7 @@ class CacheManager {
       this.cache.sales = data.sales || [];
       this.cache.tokens = data.tokens || [];
       this.cache.pairs = data.pairs || [];
+      this.cache.accounts = data.accounts || [];
       this.cache.transactions = data.transactions || [];
 
       // Single objects
@@ -135,6 +139,16 @@ class CacheManager {
         logger.cache.update("pairs", newPairs);
       }
 
+      // Add new accounts
+      if (newData.accounts?.length > 0) {
+        const newAccounts = this.addUniqueItems(
+          this.cache.accounts,
+          newData.accounts
+        );
+        addedCount += newAccounts;
+        logger.cache.update("accounts", newAccounts);
+      }
+
       // Update metadata
       this.cache.lastUpdated = new Date();
       this.cache.totalRecords = this.calculateTotalRecords();
@@ -186,6 +200,7 @@ class CacheManager {
       sales: [...this.cache.sales],
       tokens: [...this.cache.tokens],
       pairs: [...this.cache.pairs],
+      accounts: [...this.cache.accounts],
     };
   }
 
@@ -219,6 +234,7 @@ class CacheManager {
       this.cache.sales.length +
       this.cache.tokens.length +
       this.cache.pairs.length +
+      this.cache.accounts.length +
       this.cache.transactions.length +
       (this.cache.globalStats ? 1 : 0) +
       (this.cache.marketplaceStats ? 1 : 0) +
@@ -242,6 +258,7 @@ class CacheManager {
       sales: [],
       tokens: [],
       pairs: [],
+      accounts: [],
       globalStats: null,
       marketplaceStats: null,
       piculeFactory: null,

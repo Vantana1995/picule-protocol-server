@@ -219,6 +219,77 @@ router.get("/pairs", checkCacheReady, (req, res) => {
   }
 });
 
+// ============ ACCOUNT ENDPOINTS ============
+router.get("/accounts/:address", checkCacheReady, (req, res) => {
+  try {
+    const address = req.params.address.toLowerCase();
+    const account = cacheManager.getById("accounts", address);
+
+    if (!account) {
+      return sendError(res, 404, "Account not found");
+    }
+
+    sendSuccess(res, account, `Retrieved account data for ${address}`);
+  } catch (error) {
+    sendError(res, 500, "Failed to get account data", error.message);
+  }
+});
+
+// Get all accounts (with pagination)
+router.get("/accounts", checkCacheReady, (req, res) => {
+  try {
+    const { limit = 100, offset = 0 } = req.query;
+    let data = cacheManager.get("accounts") || [];
+
+    // Apply pagination
+    const startIndex = parseInt(offset);
+    const endIndex = startIndex + parseInt(limit);
+    const paginatedData = data.slice(startIndex, endIndex);
+
+    sendSuccess(
+      res,
+      {
+        accounts: paginatedData,
+        total: data.length,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+      },
+      `Retrieved ${paginatedData.length} accounts`
+    );
+  } catch (error) {
+    sendError(res, 500, "Failed to get accounts", error.message);
+  }
+});
+
+// Get account trading stats
+router.get("/accounts/:address/stats", checkCacheReady, (req, res) => {
+  try {
+    const address = req.params.address.toLowerCase();
+    const account = cacheManager.getById("accounts", address);
+
+    if (!account) {
+      return sendError(res, 404, "Account not found");
+    }
+
+    // Extract trading statistics
+    const stats = {
+      usdSwapped: account.usdSwapped || "0",
+      totalContributions: account.contributions?.length || 0,
+      totalICORequests: account.icoRequests?.length || 0,
+      totalNFTs: account.ERC721tokens?.length || 0,
+      totalListings: account.listings?.length || 0,
+      totalSalesAsBuyer: account.salesAsBuyer?.length || 0,
+      totalSalesAsSeller: account.salesAsSeller?.length || 0,
+      totalProjectsCreated: account.createdProjects?.length || 0,
+      liquidityPositions: account.liquidityPositions?.length || 0,
+    };
+
+    sendSuccess(res, stats, `Retrieved trading stats for ${address}`);
+  } catch (error) {
+    sendError(res, 500, "Failed to get account stats", error.message);
+  }
+});
+
 // ============ STATS ENDPOINTS ============
 
 // Get global stats
