@@ -379,16 +379,17 @@ router.get("/tokens/:address/price", checkCacheReady, (req, res) => {
 });
 
 // Get multiple token prices at once
-router.post("/tokens/prices", checkCacheReady, (req, res) => {
+router.get("/tokens/prices", checkCacheReady, (req, res) => {
   try {
-    const { addresses } = req.body;
+    const { addresses } = req.query;
 
-    if (!addresses || !Array.isArray(addresses)) {
-      return sendError(res, 400, "addresses array is required");
+    if (!addresses) {
+      return sendError(res, 400, "addresses parameter is required");
     }
+    const addressesArray = addresses.split(",").map((addr) => addr.trim());
 
     const prices = {};
-    for (const address of addresses) {
+    for (const address of addressesArray) {
       const priceData = cacheManager.getLatestTokenPrice(address);
       if (priceData) {
         prices[address.toLowerCase()] = priceData;
@@ -407,15 +408,15 @@ router.post("/tokens/prices", checkCacheReady, (req, res) => {
     sendError(res, 500, "Failed to get token prices", error.message);
   }
 });
-
 // Get multiple token historical data at once
-router.post("/tokens/history", checkCacheReady, (req, res) => {
+router.get("/tokens/history", checkCacheReady, (req, res) => {
   try {
-    const { addresses, timeframe = "hour", limit = 168 } = req.body;
+    const { addresses, timeframe = "hour", limit = 168 } = req.query;
 
-    if (!addresses || !Array.isArray(addresses)) {
-      return sendError(res, 400, "addresses array is required");
+    if (!addresses) {
+      return sendError(res, 400, "addresses parameter is required");
     }
+    const addressesArray = addresses.split(",").map((addr) => addr.trim());
 
     if (!["minute", "hour", "day"].includes(timeframe)) {
       return sendError(
@@ -426,7 +427,7 @@ router.post("/tokens/history", checkCacheReady, (req, res) => {
     }
 
     const historicalData = {};
-    for (const address of addresses) {
+    for (const address of addressesArray) {
       const data = cacheManager.getTokenHistoricalData(
         address,
         timeframe,
