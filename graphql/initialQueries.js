@@ -143,6 +143,48 @@ const GET_ALL_INITIAL_DATA = `
       txCount
       totalLiquidity
       derivedMON
+      tokenDayData(first: 30, orderBy: date, orderDirection: desc) {
+        id
+        date
+        dailyVolumeToken
+        dailyVolumeMON
+        dailyVolumeUSD
+        dailyTxns
+        totalLiquidityToken
+        totalLiquidityMON
+        totalLiquidityUSD
+        priceUSD
+      }
+      tokenHourData(first: 168, orderBy: periodStartUnix, orderDirection: desc) {
+        id
+        periodStartUnix
+        volume
+        volumeUSD
+        untrackedVolumeUSD
+        totalValueLocked
+        totalValueLockedUSD
+        priceUSD
+        feesUSD
+        open
+        high
+        low
+        close
+      }
+      tokenMinuteData(first: 1440, orderBy: periodStartUnix, orderDirection: desc) {
+        id
+        periodStartUnix
+        volume
+        volumeUSD
+        untrackedVolumeUSD
+        totalValueLocked
+        totalValueLockedUSD
+        priceUSD
+        feesUSD
+        open
+        high
+        low
+        close
+      }
     }
 
     pairs(first: $first, orderBy: txCount, orderDirection: desc) {
@@ -248,6 +290,7 @@ const GET_ALL_INITIAL_DATA = `
         amount1
       }
     }
+   
   }
 `;
 module.exports = {

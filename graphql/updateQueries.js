@@ -130,6 +130,50 @@ const GET_UPDATES_FROM_BLOCK = `
       txCount
       totalLiquidity
       derivedMON
+      tokenDayData(first: 7, orderBy: date, orderDirection: desc, where: { date_gte: $fromTimestamp }) {
+        id
+        date
+        dailyVolumeToken
+        dailyVolumeMON
+        dailyVolumeUSD
+        dailyTxns
+        totalLiquidityToken
+        totalLiquidityMON
+        totalLiquidityUSD
+        priceUSD
+      }
+      
+      tokenHourData(first: 24, orderBy: periodStartUnix, orderDirection: desc, where: { periodStartUnix_gte: $fromTimestamp }) {
+        id
+        periodStartUnix
+        volume
+        volumeUSD
+        untrackedVolumeUSD
+        totalValueLocked
+        totalValueLockedUSD
+        priceUSD
+        feesUSD
+        open
+        high
+        low
+        close
+      }
+      
+      tokenMinuteData(first: 60, orderBy: periodStartUnix, orderDirection: desc, where: { periodStartUnix_gte: $fromTimestamp }) {
+        id
+        periodStartUnix
+        volume
+        volumeUSD
+        untrackedVolumeUSD
+        totalValueLocked
+        totalValueLockedUSD
+        priceUSD
+        feesUSD
+        open
+        high
+        low
+        close
+      }
     }
 
     # New pairs since fromBlock

@@ -322,6 +322,138 @@ router.get("/stats/cache", (req, res) => {
   }
 });
 
+// ============ HISTORICAL DATA ENDPOINTS ============
+
+// Get token historical data
+router.get("/tokens/:address/history", checkCacheReady, (req, res) => {
+  try {
+    const { address } = req.params;
+    const { timeframe = "hour", limit = 168 } = req.query;
+
+    if (!["minute", "hour", "day"].includes(timeframe)) {
+      return sendError(
+        res,
+        400,
+        "Invalid timeframe. Use: minute, hour, or day"
+      );
+    }
+
+    const data = cacheManager.getTokenHistoricalData(
+      address,
+      timeframe,
+      parseInt(limit)
+    );
+
+    sendSuccess(
+      res,
+      {
+        tokenAddress: address,
+        timeframe,
+        limit: parseInt(limit),
+        data,
+      },
+      `Retrieved ${data.length} ${timeframe} data points for token ${address}`
+    );
+  } catch (error) {
+    sendError(res, 500, "Failed to get token historical data", error.message);
+  }
+});
+
+// Get token current price
+router.get("/tokens/:address/price", checkCacheReady, (req, res) => {
+  try {
+    const { address } = req.params;
+    const priceData = cacheManager.getLatestTokenPrice(address);
+
+    if (!priceData) {
+      return sendError(res, 404, "Price data not found for token");
+    }
+
+    sendSuccess(res, {
+      tokenAddress: address,
+      ...priceData,
+    });
+  } catch (error) {
+    sendError(res, 500, "Failed to get token price", error.message);
+  }
+});
+
+// Get multiple token prices at once
+router.post("/tokens/prices", checkCacheReady, (req, res) => {
+  try {
+    const { addresses } = req.body;
+
+    if (!addresses || !Array.isArray(addresses)) {
+      return sendError(res, 400, "addresses array is required");
+    }
+
+    const prices = {};
+    for (const address of addresses) {
+      const priceData = cacheManager.getLatestTokenPrice(address);
+      if (priceData) {
+        prices[address.toLowerCase()] = priceData;
+      }
+    }
+
+    sendSuccess(
+      res,
+      {
+        prices,
+        count: Object.keys(prices).length,
+      },
+      `Retrieved prices for ${Object.keys(prices).length} tokens`
+    );
+  } catch (error) {
+    sendError(res, 500, "Failed to get token prices", error.message);
+  }
+});
+
+// Get multiple token historical data at once
+router.post("/tokens/history", checkCacheReady, (req, res) => {
+  try {
+    const { addresses, timeframe = "hour", limit = 168 } = req.body;
+
+    if (!addresses || !Array.isArray(addresses)) {
+      return sendError(res, 400, "addresses array is required");
+    }
+
+    if (!["minute", "hour", "day"].includes(timeframe)) {
+      return sendError(
+        res,
+        400,
+        "Invalid timeframe. Use: minute, hour, or day"
+      );
+    }
+
+    const historicalData = {};
+    for (const address of addresses) {
+      const data = cacheManager.getTokenHistoricalData(
+        address,
+        timeframe,
+        parseInt(limit)
+      );
+      if (data.length > 0) {
+        historicalData[address.toLowerCase()] = data;
+      }
+    }
+
+    sendSuccess(
+      res,
+      {
+        timeframe,
+        limit: parseInt(limit),
+        data: historicalData,
+        count: Object.keys(historicalData).length,
+      },
+      `Retrieved ${timeframe} data for ${
+        Object.keys(historicalData).length
+      } tokens`
+    );
+  } catch (error) {
+    sendError(res, 500, "Failed to get historical data", error.message);
+  }
+});
+
 // ============ UTILITY ENDPOINTS ============
 
 // Get all data at once
@@ -424,4 +556,5 @@ router.delete("/admin/whitelist/:origin", checkAdminAccess, (req, res) => {
     sendError(res, 404, "Origin not found");
   }
 });
+
 module.exports = router;

@@ -31,6 +31,15 @@ class CacheManager {
       lastUpdated: null,
       totalRecords: 0,
       isInitialized: false,
+      lastBlockNumber: 0,
+      lastTimestamp: 0,
+
+      // Historical price data
+      tokenDayData: [],
+      tokenHourData: [],
+      tokenMinuteData: [],
+      pairHourData: [],
+      pairDayData: [],
     };
   }
 
@@ -57,6 +66,34 @@ class CacheManager {
       this.cache.lastUpdated = new Date();
       this.cache.totalRecords = this.calculateTotalRecords();
       this.cache.isInitialized = true;
+
+      if (data.tokens?.length > 0) {
+        for (const token of data.tokens) {
+          if (token.tokenDayData?.length > 0) {
+            const formattedDayData = token.tokenDayData.map((data) => ({
+              ...data,
+              token: { id: token.id, symbol: token.symbol, name: token.name },
+            }));
+            this.cache.tokenDayData.push(...formattedDayData);
+          }
+
+          if (token.tokenHourData?.length > 0) {
+            const formattedHourData = token.tokenHourData.map((data) => ({
+              ...data,
+              token: { id: token.id, symbol: token.symbol, name: token.name },
+            }));
+            this.cache.tokenHourData.push(...formattedHourData);
+          }
+
+          if (token.tokenMinuteData?.length > 0) {
+            const formattedMinuteData = token.tokenMinuteData.map((data) => ({
+              ...data,
+              token: { id: token.id, symbol: token.symbol, name: token.name },
+            }));
+            this.cache.tokenMinuteData.push(...formattedMinuteData);
+          }
+        }
+      }
 
       logger.cache.update("INITIAL_LOAD", this.cache.totalRecords);
       logger.info(
@@ -124,12 +161,50 @@ class CacheManager {
 
       // Add new DEX tokens
       if (newData.tokens?.length > 0) {
-        const newTokens = this.addUniqueItems(
-          this.cache.tokens,
-          newData.tokens
-        );
-        addedCount += newTokens;
-        logger.cache.update("tokens", newTokens);
+        for (const token of newData.tokens) {
+          const existingTokenIndex = this.cache.tokens.findIndex(
+            (t) => t.id === token.id
+          );
+          if (existingTokenIndex >= 0) {
+            this.cache.tokens[existingTokenIndex] = token;
+          } else {
+            this.cache.tokens.push(token);
+            addedCount += 1;
+          }
+          if (token.tokenDayData?.length > 0) {
+            const newTokenDayData = this.addUniqueItems(
+              this.cache.tokenDayData,
+              token.tokenDayData.map((data) => ({
+                ...data,
+                token: { id: token.id, symbol: token.symbol, name: token.name },
+              }))
+            );
+            addedCount += newTokenDayData;
+          }
+          if (token.tokenHourData?.length > 0) {
+            const newTokenHourData = this.addUniqueItems(
+              this.cache.tokenHourData,
+              token.tokenHourData.map((data) => ({
+                ...data,
+                token: { id: token.id, symbol: token.symbol, name: token.name },
+              }))
+            );
+            addedCount += newTokenHourData;
+          }
+
+          if (token.tokenMinuteData?.length > 0) {
+            const newTokenMinuteData = this.addUniqueItems(
+              this.cache.tokenMinuteData,
+              token.tokenMinuteData.map((data) => ({
+                ...data,
+                token: { id: token.id, symbol: token.symbol, name: token.name },
+              }))
+            );
+            addedCount += newTokenMinuteData;
+          }
+        }
+
+        logger.cache.update("tokens", newData.tokens.length);
       }
 
       // Add new pairs
@@ -235,7 +310,10 @@ class CacheManager {
       this.cache.tokens.length +
       this.cache.pairs.length +
       this.cache.accounts.length +
-      this.cache.transactions.length +
+      this.cache.tokenDayData.length +
+      this.cache.tokenHourData.length +
+      this.cache.tokenMinuteData.length +
+      (this.cache.transactions?.length || 0) +
       (this.cache.globalStats ? 1 : 0) +
       (this.cache.marketplaceStats ? 1 : 0) +
       (this.cache.piculeFactory ? 1 : 0)
@@ -298,6 +376,94 @@ class CacheManager {
         return timeB - timeA; // Newest first
       })
       .slice(0, limit);
+  }
+
+  // Get latest price for token
+  getLatestTokenPrice(tokenAddress) {
+    const address = tokenAddress.toLowerCase();
+
+    // Try minute data first
+    const minuteData = this.getFiltered(
+      "tokenMinuteData",
+      (item) => item.token.id.toLowerCase() === address
+    ).sort((a, b) => b.periodStartUnix - a.periodStartUnix);
+
+    if (minuteData.length > 0 && minuteData[0].priceUSD) {
+      return {
+        priceUSD: parseFloat(minuteData[0].priceUSD),
+        timestamp: minuteData[0].periodStartUnix,
+        source: "minute",
+      };
+    }
+
+    // Try hour data
+    const hourData = this.getFiltered(
+      "tokenHourData",
+      (item) => item.token.id.toLowerCase() === address
+    ).sort((a, b) => b.periodStartUnix - a.periodStartUnix);
+
+    if (hourData.length > 0 && hourData[0].priceUSD) {
+      return {
+        priceUSD: parseFloat(hourData[0].priceUSD),
+        timestamp: hourData[0].periodStartUnix,
+        source: "hour",
+      };
+    }
+
+    return null;
+  }
+
+  // Get historical data for specific token
+  getTokenHistoricalData(tokenAddress, timeframe = "hour", limit = 168) {
+    const entityType = `token${
+      timeframe.charAt(0).toUpperCase() + timeframe.slice(1)
+    }Data`;
+    const address = tokenAddress.toLowerCase();
+    const data = this.getFiltered(
+      entityType,
+      (item) => item.token.id.toLowerCase() === address
+    );
+
+    const sorted = data
+      .sort((a, b) => {
+        const timeA = a.periodStartUnix || a.date || 0;
+        const timeB = b.periodStartUnix || b.date || 0;
+        return timeB - timeA;
+      })
+      .slice(0, limit);
+
+    return sorted.map((item) => ({
+      timestamp: item.periodStartUnix || item.date,
+      priceUSD: parseFloat(item.priceUSD || 0),
+      volume: parseFloat(item.volume || item.dailyVolumeToken || 0),
+      volumeUSD: parseFloat(item.volumeUSD || item.dailyVolumeUSD || 0),
+      open: parseFloat(item.open || item.priceUSD || 0),
+      high: parseFloat(item.high || item.priceUSD || 0),
+      low: parseFloat(item.low || item.priceUSD || 0),
+      close: parseFloat(item.close || item.priceUSD || 0),
+      totalValueLocked: parseFloat(
+        item.totalValueLocked || item.totalLiquidityToken || 0
+      ),
+      totalValueLockedUSD: parseFloat(
+        item.totalValueLockedUSD || item.totalLiquidityUSD || 0
+      ),
+    }));
+  }
+
+  // Get all trading tokens
+  getTradingTokens() {
+    const pairs = this.get("pairs") || [];
+    const erc20Tokens = this.get("erc20Tokens") || [];
+
+    const tradingTokenAddresses = new Set();
+    pairs.forEach((pair) => {
+      tradingTokenAddresses.add(pair.token0.id.toLowerCase());
+      tradingTokenAddresses.add(pair.token1.id.toLowerCase());
+    });
+
+    return erc20Tokens.filter((token) =>
+      tradingTokenAddresses.has(token.id.toLowerCase())
+    );
   }
 }
 
