@@ -454,7 +454,66 @@ router.get("/tokens/history", checkCacheReady, (req, res) => {
     sendError(res, 500, "Failed to get historical data", error.message);
   }
 });
+// ============ FUNDS MANAGER ENDPOINTS ============
 
+// Get FundsManager data by address
+router.get("/funds-manager/:address", checkCacheReady, (req, res) => {
+  try {
+    const address = req.params.address.toLowerCase();
+    
+    // Get all related data for this FundsManager
+    const checkpoints = cacheManager.getFiltered('checkpoints', 
+      item => item.fundsManager.id.toLowerCase() === address
+    );
+    
+    const lpTokenLocks = cacheManager.getFiltered('lpTokenLocks', 
+      item => item.fundsManager.id.toLowerCase() === address
+    );
+    
+    const bonusClaims = cacheManager.getFiltered('bonusClaims', 
+      item => item.fundsManager.id.toLowerCase() === address
+    );
+
+    const fundsManagerData = {
+      address,
+      checkpoints,
+      lpTokenLocks,
+      bonusClaims,
+      totalCheckpoints: checkpoints.length,
+      totalLPTokenLocks: lpTokenLocks.length,
+      totalBonusClaims: bonusClaims.length
+    };
+
+    sendSuccess(res, fundsManagerData, `Retrieved FundsManager data for ${address}`);
+  } catch (error) {
+    sendError(res, 500, "Failed to get FundsManager data", error.message);
+  }
+});
+
+// Get user's bonus claims
+router.get("/bonus-claims/:userAddress", checkCacheReady, (req, res) => {
+  try {
+    const userAddress = req.params.userAddress.toLowerCase();
+    
+    const userBonusClaims = cacheManager.getFiltered('bonusClaims', 
+      claim => claim.claimer.id.toLowerCase() === userAddress
+    );
+
+    sendSuccess(res, userBonusClaims, `Retrieved ${userBonusClaims.length} bonus claims for user`);
+  } catch (error) {
+    sendError(res, 500, "Failed to get bonus claims", error.message);
+  }
+});
+
+// Get all checkpoints
+router.get("/checkpoints", checkCacheReady, (req, res) => {
+  try {
+    const data = cacheManager.get("checkpoints");
+    sendSuccess(res, data, `Retrieved ${data.length} checkpoints`);
+  } catch (error) {
+    sendError(res, 500, "Failed to get checkpoints", error.message);
+  }
+});
 // ============ UTILITY ENDPOINTS ============
 
 // Get all data at once

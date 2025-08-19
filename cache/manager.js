@@ -34,6 +34,11 @@ class CacheManager {
       lastBlockNumber: 0,
       lastTimestamp: 0,
 
+      // FundsManager data
+      checkpoints: [],
+      lpTokenLocks: [],
+      bonusClaims: [],
+
       // Historical price data
       tokenDayData: [],
       tokenHourData: [],
@@ -223,6 +228,33 @@ class CacheManager {
         addedCount += newAccounts;
         logger.cache.update("accounts", newAccounts);
       }
+      // Add new FundsManager data
+      if (newData.checkpoints?.length > 0) {
+        const newCheckpoints = this.addUniqueItems(
+          this.cache.checkpoints,
+          newData.checkpoints
+        );
+        addedCount += newCheckpoints;
+        logger.cache.update("checkpoints", newCheckpoints);
+      }
+
+      if (newData.lpTokenLocks?.length > 0) {
+        const newLPTokenLocks = this.addUniqueItems(
+          this.cache.lpTokenLocks,
+          newData.lpTokenLocks
+        );
+        addedCount += newLPTokenLocks;
+        logger.cache.update("lpTokenLocks", newLPTokenLocks);
+      }
+
+      if (newData.bonusClaims?.length > 0) {
+        const newBonusClaims = this.addUniqueItems(
+          this.cache.bonusClaims,
+          newData.bonusClaims
+        );
+        addedCount += newBonusClaims;
+        logger.cache.update("bonusClaims", newBonusClaims);
+      }
 
       // Update metadata
       this.cache.lastUpdated = new Date();
@@ -313,6 +345,9 @@ class CacheManager {
       this.cache.tokenDayData.length +
       this.cache.tokenHourData.length +
       this.cache.tokenMinuteData.length +
+      this.cache.checkpoints.length +
+      this.cache.lpTokenLocks.length +
+      this.cache.bonusClaims.length +
       (this.cache.transactions?.length || 0) +
       (this.cache.globalStats ? 1 : 0) +
       (this.cache.marketplaceStats ? 1 : 0) +
