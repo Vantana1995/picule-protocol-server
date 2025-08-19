@@ -199,6 +199,20 @@ const GET_UPDATES_FROM_BLOCK = `
       txCount
       createdAtTimestamp
       createdAtBlockNumber
+      liquidityPositionSnapshots(orderBy: timestamp, orderDirection: asc) {
+        id
+        timestamp
+        account {
+          id
+        }
+        token0PriceUSD
+        token1PriceUSD
+        reserve0
+        reserve1
+        reserveUSD
+        liquidityTokenTotalSupply
+        liquidityTokenBalance
+      }
     }
    # Accounts with recent activity
     accounts(
