@@ -460,18 +460,21 @@ router.get("/tokens/history", checkCacheReady, (req, res) => {
 router.get("/funds-manager/:address", checkCacheReady, (req, res) => {
   try {
     const address = req.params.address.toLowerCase();
-    
+
     // Get all related data for this FundsManager
-    const checkpoints = cacheManager.getFiltered('checkpoints', 
-      item => item.fundsManager.id.toLowerCase() === address
+    const checkpoints = cacheManager.getFiltered(
+      "checkpoints",
+      (item) => item.fundsManager.id.toLowerCase() === address
     );
-    
-    const lpTokenLocks = cacheManager.getFiltered('lpTokenLocks', 
-      item => item.fundsManager.id.toLowerCase() === address
+
+    const lpTokenLocks = cacheManager.getFiltered(
+      "lpTokenLocks",
+      (item) => item.fundsManager.id.toLowerCase() === address
     );
-    
-    const bonusClaims = cacheManager.getFiltered('bonusClaims', 
-      item => item.fundsManager.id.toLowerCase() === address
+
+    const bonusClaims = cacheManager.getFiltered(
+      "bonusClaims",
+      (item) => item.fundsManager.id.toLowerCase() === address
     );
 
     const fundsManagerData = {
@@ -481,10 +484,14 @@ router.get("/funds-manager/:address", checkCacheReady, (req, res) => {
       bonusClaims,
       totalCheckpoints: checkpoints.length,
       totalLPTokenLocks: lpTokenLocks.length,
-      totalBonusClaims: bonusClaims.length
+      totalBonusClaims: bonusClaims.length,
     };
 
-    sendSuccess(res, fundsManagerData, `Retrieved FundsManager data for ${address}`);
+    sendSuccess(
+      res,
+      fundsManagerData,
+      `Retrieved FundsManager data for ${address}`
+    );
   } catch (error) {
     sendError(res, 500, "Failed to get FundsManager data", error.message);
   }
@@ -494,12 +501,17 @@ router.get("/funds-manager/:address", checkCacheReady, (req, res) => {
 router.get("/bonus-claims/:userAddress", checkCacheReady, (req, res) => {
   try {
     const userAddress = req.params.userAddress.toLowerCase();
-    
-    const userBonusClaims = cacheManager.getFiltered('bonusClaims', 
-      claim => claim.claimer.id.toLowerCase() === userAddress
+
+    const userBonusClaims = cacheManager.getFiltered(
+      "bonusClaims",
+      (claim) => claim.claimer.id.toLowerCase() === userAddress
     );
 
-    sendSuccess(res, userBonusClaims, `Retrieved ${userBonusClaims.length} bonus claims for user`);
+    sendSuccess(
+      res,
+      userBonusClaims,
+      `Retrieved ${userBonusClaims.length} bonus claims for user`
+    );
   } catch (error) {
     sendError(res, 500, "Failed to get bonus claims", error.message);
   }

@@ -61,6 +61,11 @@ class CacheManager {
       this.cache.pairs = data.pairs || [];
       this.cache.accounts = data.accounts || [];
       this.cache.transactions = data.transactions || [];
+      this.cache.checkpoints = data.checkpoints || [];
+      this.cache.lpTokenLocks = data.lpTokens || [];
+      this.cache.bonusClaims = data.bonusClaims || [];
+      this.cache.fundsManagers = data.fundsManagers || [];
+      this.cache.piculeDayData = data.piculeDayData || [];
 
       // Single objects
       this.cache.globalStats = data.globalStats?.[0] || null;
@@ -176,6 +181,7 @@ class CacheManager {
             this.cache.tokens.push(token);
             addedCount += 1;
           }
+
           if (token.tokenDayData?.length > 0) {
             const newTokenDayData = this.addUniqueItems(
               this.cache.tokenDayData,
@@ -186,6 +192,7 @@ class CacheManager {
             );
             addedCount += newTokenDayData;
           }
+
           if (token.tokenHourData?.length > 0) {
             const newTokenHourData = this.addUniqueItems(
               this.cache.tokenHourData,
@@ -208,7 +215,6 @@ class CacheManager {
             addedCount += newTokenMinuteData;
           }
         }
-
         logger.cache.update("tokens", newData.tokens.length);
       }
 
@@ -228,7 +234,28 @@ class CacheManager {
         addedCount += newAccounts;
         logger.cache.update("accounts", newAccounts);
       }
-      // Add new FundsManager data
+
+      // Add new transactions
+      if (newData.transactions?.length > 0) {
+        const newTransactions = this.addUniqueItems(
+          this.cache.transactions,
+          newData.transactions
+        );
+        addedCount += newTransactions;
+        logger.cache.update("transactions", newTransactions);
+      }
+
+      // Add new piculeDayData
+      if (newData.piculeDayData?.length > 0) {
+        const newPiculeDayData = this.addUniqueItems(
+          this.cache.piculeDayData,
+          newData.piculeDayData
+        );
+        addedCount += newPiculeDayData;
+        logger.cache.update("piculeDayData", newPiculeDayData);
+      }
+
+      // Add new FundsManager data from direct fields
       if (newData.checkpoints?.length > 0) {
         const newCheckpoints = this.addUniqueItems(
           this.cache.checkpoints,
@@ -254,6 +281,64 @@ class CacheManager {
         );
         addedCount += newBonusClaims;
         logger.cache.update("bonusClaims", newBonusClaims);
+      }
+
+      // Add new FundsManager data from fundsManagers objects
+      if (newData.fundsManagers?.length > 0) {
+        const newFundsManagers = this.addUniqueItems(
+          this.cache.fundsManagers,
+          newData.fundsManagers
+        );
+        addedCount += newFundsManagers;
+        logger.cache.update("fundsManagers", newFundsManagers);
+
+        for (const fundsManager of newData.fundsManagers) {
+          // Add checkpoints from fundsManager
+          if (fundsManager.checkpoints?.length > 0) {
+            const newCheckpoints = this.addUniqueItems(
+              this.cache.checkpoints,
+              fundsManager.checkpoints
+            );
+            addedCount += newCheckpoints;
+          }
+
+          // Add lpTokens from fundsManager
+          if (fundsManager.lpTokens?.length > 0) {
+            const newLPTokens = this.addUniqueItems(
+              this.cache.lpTokenLocks,
+              fundsManager.lpTokens
+            );
+            addedCount += newLPTokens;
+          }
+
+          // Add bonusClaims from fundsManager
+          if (fundsManager.bonusClaims?.length > 0) {
+            const newBonusClaims = this.addUniqueItems(
+              this.cache.bonusClaims,
+              fundsManager.bonusClaims
+            );
+            addedCount += newBonusClaims;
+          }
+        }
+      }
+
+      // Update global stats if present
+      if (newData.globalStats) {
+        this.cache.globalStats = newData.globalStats[0] || newData.globalStats;
+        logger.cache.update("globalStats", 1);
+      }
+
+      // Update marketplace stats if present
+      if (newData.marketplaceStats) {
+        this.cache.marketplaceStats =
+          newData.marketplaceStats[0] || newData.marketplaceStats;
+        logger.cache.update("marketplaceStats", 1);
+      }
+
+      // Update picule factory if present
+      if (newData.piculeFactories?.length > 0) {
+        this.cache.piculeFactory = newData.piculeFactories[0];
+        logger.cache.update("piculeFactory", 1);
       }
 
       // Update metadata
@@ -348,6 +433,8 @@ class CacheManager {
       this.cache.checkpoints.length +
       this.cache.lpTokenLocks.length +
       this.cache.bonusClaims.length +
+      this.cache.fundsManagers.length +
+      this.cache.piculeDayData.length +
       (this.cache.transactions?.length || 0) +
       (this.cache.globalStats ? 1 : 0) +
       (this.cache.marketplaceStats ? 1 : 0) +
@@ -372,6 +459,12 @@ class CacheManager {
       tokens: [],
       pairs: [],
       accounts: [],
+      checkpoints: [],
+      lpTokenLocks: [],
+      bonusClaims: [],
+      fundsManagers: [],
+      piculeDayData: [],
+      transactions: [],
       globalStats: null,
       marketplaceStats: null,
       piculeFactory: null,

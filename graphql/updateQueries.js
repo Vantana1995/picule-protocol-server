@@ -10,6 +10,12 @@ const GET_UPDATES_FROM_BLOCK = `
       }
     }
     
+    transactions(where: { blockNumber_gt: $fromBlock }, orderBy: blockNumber, orderDirection: desc) {
+      id
+      blockNumber
+      timestamp
+      gasUsed
+    }
 
     # New ICO requests since fromBlock
    icorequests(where: { createdAt_gt: $fromBlock }, orderBy: createdAt, orderDirection: desc) {
@@ -192,10 +198,15 @@ const GET_UPDATES_FROM_BLOCK = `
       reserve0
       reserve1
       totalSupply
+      reserveMON
       reserveUSD
+      trackedReserveMON
       token0Price
       token1Price
+      volumeToken0
+      volumeToken1
       volumeUSD
+      untrackedVolumeUSD
       txCount
       createdAtTimestamp
       createdAtBlockNumber
@@ -270,65 +281,78 @@ const GET_UPDATES_FROM_BLOCK = `
       }
     }
     fundsManagers {
-  id
-  project {
-    id
-  }
-  totalLockedValue
-  totalLockedValueUSD
-  totalBonusClaimed
-  totalBonusClaimedUSD
-  
-  checkpoints(where: { timestamp_gt: $fromBlock }, orderBy: timestamp, orderDirection: desc) {
-    id
-    project
-    value1
-    value2
-    value3
-    timestamp
-    transaction {
       id
-      blockNumber
-      timestamp
+      project {
+        id
+      }
+      totalLockedValue
+      totalLockedValueUSD
+      totalBonusClaimed
+      totalBonusClaimedUSD
+      
+      checkpoints {
+        id
+        project
+        value1
+        value2
+        value3
+        timestamp
+        transaction {
+          id
+          blockNumber
+          timestamp
+        }
+      }
+      
+      lpTokens {
+        id
+        param1
+        param2
+        param3
+        nftToken {
+          id
+          identifier
+        }
+        amount2
+        timestamp
+        transaction {
+          id
+          blockNumber
+          timestamp
+        }
+      }
+      
+      bonusClaims {
+        id
+        claimId
+        claimer {
+          id
+        }
+        token
+        amount1
+        amount2
+        amount3
+        timestamp
+        transaction {
+          id
+          blockNumber
+          timestamp
+        }
+      }
     }
-  }
-  
-  lpTokens(where: { timestamp_gt: $fromBlock }, orderBy: timestamp, orderDirection: desc) {
-    id
-    param1
-    param2
-    param3
-    nftToken {
+    globalStats(id: "1") {
       id
-      identifier
+      totalProjects
+      totalTokensCreated
+      totalICORequests
+      totalContributions
+      totalContributionValue
+      totalContributionValueUSD
+      totalListings
+      totalSales
+      totalVolume
+      totalVolumeUSD
     }
-    amount2
-    timestamp
-    transaction {
-      id
-      blockNumber
-      timestamp
-    }
-  }
-  
-  bonusClaims(where: { timestamp_gt: $fromBlock }, orderBy: timestamp, orderDirection: desc) {
-    id
-    claimId
-    claimer {
-      id
-    }
-    token
-    amount1
-    amount2
-    amount3
-    timestamp
-    transaction {
-      id
-      blockNumber
-      timestamp
-    }
-  }
-}
   }
 `;
 
