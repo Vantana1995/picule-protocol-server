@@ -269,64 +269,66 @@ const GET_UPDATES_FROM_BLOCK = `
         amount1
       }
     }
-      checkpoints(where: { timestamp_gt: $fromBlock }, orderBy: timestamp, orderDirection: desc) {
+    fundsManagers {
+  id
+  project {
+    id
+  }
+  totalLockedValue
+  totalLockedValueUSD
+  totalBonusClaimed
+  totalBonusClaimedUSD
+  
+  checkpoints(where: { timestamp_gt: $fromBlock }, orderBy: timestamp, orderDirection: desc) {
+    id
+    project
+    value1
+    value2
+    value3
+    timestamp
+    transaction {
       id
-      fundsManager {
-        id
-      }
-      project
-      value1
-      value2
-      value3
+      blockNumber
       timestamp
-      transaction {
-        id
-        blockNumber
-        timestamp
-      }
     }
-
-    lpTokenLocks(where: { timestamp_gt: $fromBlock }, orderBy: timestamp, orderDirection: desc) {
+  }
+  
+  lpTokens(where: { timestamp_gt: $fromBlock }, orderBy: timestamp, orderDirection: desc) {
+    id
+    param1
+    param2
+    param3
+    nftToken {
       id
-      fundsManager {
-        id
-      }
-      param1
-      param2
-      param3
-      nftToken {
-        id
-        identifier
-      }
-      amount2
-      timestamp
-      transaction {
-        id
-        blockNumber
-        timestamp
-      }
+      identifier
     }
-
-    bonusClaims(where: { timestamp_gt: $fromBlock }, orderBy: timestamp, orderDirection: desc) {
+    amount2
+    timestamp
+    transaction {
       id
-      fundsManager {
-        id
-      }
-      claimId
-      claimer {
-        id
-      }
-      token
-      amount1
-      amount2
-      amount3
+      blockNumber
       timestamp
-      transaction {
-        id
-        blockNumber
-        timestamp
-      }
     }
+  }
+  
+  bonusClaims(where: { timestamp_gt: $fromBlock }, orderBy: timestamp, orderDirection: desc) {
+    id
+    claimId
+    claimer {
+      id
+    }
+    token
+    amount1
+    amount2
+    amount3
+    timestamp
+    transaction {
+      id
+      blockNumber
+      timestamp
+    }
+  }
+}
   }
 `;
 
