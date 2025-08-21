@@ -26,7 +26,6 @@ class CacheManager {
       globalStats: null,
       marketplaceStats: null,
       piculeFactory: null,
-      transactions: [],
 
       // Metadata
       lastUpdated: null,
