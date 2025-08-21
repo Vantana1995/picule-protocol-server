@@ -467,8 +467,8 @@ router.get("/funds-manager/:address", checkCacheReady, (req, res) => {
       (item) => item.fundsManager.id.toLowerCase() === address
     );
 
-    const lpTokenLocks = cacheManager.getFiltered(
-      "lpTokenLocks",
+    const lpTokens = cacheManager.getFiltered(
+      "lpTokens",
       (item) => item.fundsManager.id.toLowerCase() === address
     );
 
@@ -480,10 +480,10 @@ router.get("/funds-manager/:address", checkCacheReady, (req, res) => {
     const fundsManagerData = {
       address,
       checkpoints,
-      lpTokenLocks,
+      lpTokens,
       bonusClaims,
       totalCheckpoints: checkpoints.length,
-      totalLPTokenLocks: lpTokenLocks.length,
+      totalLPTokens: lpTokens.length,
       totalBonusClaims: bonusClaims.length,
     };
 

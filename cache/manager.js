@@ -26,6 +26,7 @@ class CacheManager {
       globalStats: null,
       marketplaceStats: null,
       piculeFactory: null,
+      transactions: [],
 
       // Metadata
       lastUpdated: null,
@@ -36,8 +37,9 @@ class CacheManager {
 
       // FundsManager data
       checkpoints: [],
-      lpTokenLocks: [],
+      lpTokens: [],
       bonusClaims: [],
+      fundsManagers: [],
 
       // Historical price data
       tokenDayData: [],
@@ -62,10 +64,9 @@ class CacheManager {
       this.cache.accounts = data.accounts || [];
       this.cache.transactions = data.transactions || [];
       this.cache.checkpoints = data.checkpoints || [];
-      this.cache.lpTokenLocks = data.lpTokens || [];
+      this.cache.lpTokens = data.lpTokens || [];
       this.cache.bonusClaims = data.bonusClaims || [];
       this.cache.fundsManagers = data.fundsManagers || [];
-      this.cache.piculeDayData = data.piculeDayData || [];
 
       // Single objects
       this.cache.globalStats = data.globalStats?.[0] || null;
@@ -245,16 +246,6 @@ class CacheManager {
         logger.cache.update("transactions", newTransactions);
       }
 
-      // Add new piculeDayData
-      if (newData.piculeDayData?.length > 0) {
-        const newPiculeDayData = this.addUniqueItems(
-          this.cache.piculeDayData,
-          newData.piculeDayData
-        );
-        addedCount += newPiculeDayData;
-        logger.cache.update("piculeDayData", newPiculeDayData);
-      }
-
       // Add new FundsManager data from direct fields
       if (newData.checkpoints?.length > 0) {
         const newCheckpoints = this.addUniqueItems(
@@ -265,13 +256,13 @@ class CacheManager {
         logger.cache.update("checkpoints", newCheckpoints);
       }
 
-      if (newData.lpTokenLocks?.length > 0) {
+      if (newData.lpTokens?.length > 0) {
         const newLPTokenLocks = this.addUniqueItems(
-          this.cache.lpTokenLocks,
-          newData.lpTokenLocks
+          this.cache.lpTokens,
+          newData.lpTokens
         );
         addedCount += newLPTokenLocks;
-        logger.cache.update("lpTokenLocks", newLPTokenLocks);
+        logger.cache.update("lpTokens", newLPTokenLocks);
       }
 
       if (newData.bonusClaims?.length > 0) {
@@ -305,7 +296,7 @@ class CacheManager {
           // Add lpTokens from fundsManager
           if (fundsManager.lpTokens?.length > 0) {
             const newLPTokens = this.addUniqueItems(
-              this.cache.lpTokenLocks,
+              this.cache.lpTokens,
               fundsManager.lpTokens
             );
             addedCount += newLPTokens;
@@ -431,7 +422,7 @@ class CacheManager {
       this.cache.tokenHourData.length +
       this.cache.tokenMinuteData.length +
       this.cache.checkpoints.length +
-      this.cache.lpTokenLocks.length +
+      this.cache.lpTokens.length +
       this.cache.bonusClaims.length +
       this.cache.fundsManagers.length +
       this.cache.piculeDayData.length +
@@ -460,7 +451,7 @@ class CacheManager {
       pairs: [],
       accounts: [],
       checkpoints: [],
-      lpTokenLocks: [],
+      lpTokens: [],
       bonusClaims: [],
       fundsManagers: [],
       piculeDayData: [],
