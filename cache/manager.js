@@ -38,7 +38,6 @@ class CacheManager {
       checkpoints: [],
       lpTokens: [],
       bonusClaims: [],
-      fundsManagers: [],
 
       // Historical price data
       tokenDayData: [],
@@ -46,6 +45,9 @@ class CacheManager {
       tokenMinuteData: [],
       pairHourData: [],
       pairDayData: [],
+      fundsManagers: [],
+      piculeDayData: [],
+      transactions: [],
     };
   }
 
