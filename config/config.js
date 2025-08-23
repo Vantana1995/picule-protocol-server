@@ -14,7 +14,7 @@ const config = {
   // The Graph settings
   subgraph: {
     url: process.env.SUBGRAPH_URL,
-    updateInterval: 10 * 1000, // 10 seconds
+    updateInterval: 30 * 1000, // 30 seconds
     maxRetries: 3,
     retryDelay: 2000, // 2 seconds
     requestTimeout: 30000, // 30 seconds
@@ -23,8 +23,8 @@ const config = {
   // Cache settings
   cache: {
     defaultTTL: 60 * 1000, // 1 minute
-    maxSize: 1000, // Maximum number of cached items
-    enablePersistence: false, // Save to file on shutdown
+    maxSize: 10000, // Maximum number of cached items
+    enablePersistence: true, // Save to file on shutdown
     persistenceFile: "./cache/data.json",
   },
 
