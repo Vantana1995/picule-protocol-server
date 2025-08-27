@@ -142,6 +142,29 @@ class CacheManager {
         );
         addedCount += newContributions;
         logger.cache.update("contributions", newContributions);
+        for (const contribution of newData.contributions) {
+          const contributorId = contribution.contributor?.id;
+          if (!contributorId) continue;
+
+          let account = this.cache.accounts.find(
+            (acc) => acc.id === contributorId
+          );
+
+          if (!account) {
+            account = {
+              id: contributorId,
+              contributions: [],
+            };
+            this.cache.accounts.push(account);
+            logger.cache.update("accounts", 1);
+          }
+
+          if (!account.contributions) {
+            account.contributions = [];
+          }
+
+          this.addUniqueItems(account.contributions, [contribution]);
+        }
       }
 
       // Add new projects
