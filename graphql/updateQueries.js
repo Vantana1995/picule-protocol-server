@@ -244,9 +244,20 @@ const GET_UPDATES_FROM_BLOCK = `
         liquidityTokenBalance
       }
       ERC721tokens {
-        id
-        identifier
-      }
+  id
+  identifier
+  lpLocks {
+    id
+    fundsManager {
+      id
+    }
+    param1
+    param2
+    param3
+    amount2
+    timestamp
+  }
+}
       listings {
         id
         price
