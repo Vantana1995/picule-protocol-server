@@ -218,19 +218,16 @@ router.get("/pairs", checkCacheReady, (req, res) => {
     sendError(res, 500, "Failed to get pairs", error.message);
   }
 });
-
-// Get specific project
-router.get("/projects/:id", checkCacheReady, (req, res) => {
+// Get specific pair by ID
+router.get("/pairs/:id", checkCacheReady, (req, res) => {
   try {
-    const project = cacheManager.getById("projects", req.params.id);
-
-    if (!project) {
-      return sendError(res, 404, "Project not found");
+    const pair = cacheManager.getById("pairs", req.params.id);
+    if (!pair) {
+      return sendError(res, 404, "Pair not found");
     }
-
-    sendSuccess(res, project);
+    sendSuccess(res, pair);
   } catch (error) {
-    sendError(res, 500, "Failed to get project", error.message);
+    sendError(res, 500, "Failed to get pair", error.message);
   }
 });
 
@@ -546,29 +543,17 @@ router.get("/checkpoints", checkCacheReady, (req, res) => {
 // Get multiple cache data types and parametrized data at once
 router.get("/data/:caches", checkCacheReady, (req, res) => {
   try {
-    const requestedCaches = req.params.caches
-      .split(",")
-      .map((cache) => cache.trim());
+    const requestedCaches = req.params.caches.split(',').map(cache => cache.trim());
     const availableCaches = [
-      "icoRequests",
-      "contributions",
-      "projects",
-      "listings",
-      "sales",
-      "tokens",
-      "pairs",
-      "accounts",
-      "globalStats",
-      "marketplaceStats",
-      "checkpoints",
-      "lpTokens",
-      "bonusClaims",
+      'icoRequests', 'contributions', 'projects', 'listings', 'sales',
+      'tokens', 'pairs', 'accounts', 'globalStats', 'marketplaceStats',
+      'checkpoints', 'lpTokens', 'bonusClaims'
     ];
-
+    
     const result = {};
     const found = [];
     const notFound = [];
-
+    
     for (const cacheName of requestedCaches) {
       // Check for simple cache names
       if (availableCaches.includes(cacheName)) {
@@ -581,21 +566,17 @@ router.get("/data/:caches", checkCacheReady, (req, res) => {
         }
       }
       // Check for token history: tokens-history-ADDRESS
-      else if (cacheName.startsWith("tokens-history-")) {
-        const address = cacheName.replace("tokens-history-", "");
-        const { timeframe = "hour", limit = 168 } = req.query;
-
+      else if (cacheName.startsWith('tokens-history-')) {
+        const address = cacheName.replace('tokens-history-', '');
+        const { timeframe = 'hour', limit = 168 } = req.query;
+        
         try {
-          const data = cacheManager.getTokenHistoricalData(
-            address,
-            timeframe,
-            parseInt(limit)
-          );
+          const data = cacheManager.getTokenHistoricalData(address, timeframe, parseInt(limit));
           result[cacheName] = {
             tokenAddress: address,
             timeframe,
             limit: parseInt(limit),
-            data,
+            data
           };
           found.push(cacheName);
         } catch (err) {
@@ -603,9 +584,9 @@ router.get("/data/:caches", checkCacheReady, (req, res) => {
         }
       }
       // Check for funds manager: funds-manager-ADDRESS
-      else if (cacheName.startsWith("funds-manager-")) {
-        const address = cacheName.replace("funds-manager-", "").toLowerCase();
-
+      else if (cacheName.startsWith('funds-manager-')) {
+        const address = cacheName.replace('funds-manager-', '').toLowerCase();
+        
         try {
           const checkpoints = cacheManager.getFiltered(
             "checkpoints",
@@ -619,7 +600,7 @@ router.get("/data/:caches", checkCacheReady, (req, res) => {
             "bonusClaims",
             (item) => item.fundsManager.id.toLowerCase() === address
           );
-
+          
           result[cacheName] = {
             address,
             checkpoints,
@@ -635,9 +616,9 @@ router.get("/data/:caches", checkCacheReady, (req, res) => {
         }
       }
       // Check for account stats: account-stats-ADDRESS
-      else if (cacheName.startsWith("account-stats-")) {
-        const address = cacheName.replace("account-stats-", "").toLowerCase();
-
+      else if (cacheName.startsWith('account-stats-')) {
+        const address = cacheName.replace('account-stats-', '').toLowerCase();
+        
         try {
           const account = cacheManager.getById("accounts", address);
           if (account) {
@@ -660,23 +641,21 @@ router.get("/data/:caches", checkCacheReady, (req, res) => {
         } catch (err) {
           notFound.push(cacheName);
         }
-      } else {
+      }
+      else {
         notFound.push(cacheName);
       }
     }
-
-    sendSuccess(
-      res,
-      {
-        ...result,
-        _meta: {
-          requested: requestedCaches,
-          found: found,
-          notFound: notFound.length > 0 ? notFound : undefined,
-        },
-      },
-      `Retrieved ${found.length} data types: ${found.join(", ")}`
-    );
+    
+    sendSuccess(res, {
+      ...result,
+      _meta: {
+        requested: requestedCaches,
+        found: found,
+        notFound: notFound.length > 0 ? notFound : undefined
+      }
+    }, `Retrieved ${found.length} data types: ${found.join(', ')}`);
+    
   } catch (error) {
     sendError(res, 500, "Failed to get cache data", error.message);
   }
