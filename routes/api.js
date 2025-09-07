@@ -219,19 +219,18 @@ router.get("/pairs", checkCacheReady, (req, res) => {
   }
 });
 
-// Get specific pair by ID (address)
-router.get("/pairs/:address", checkCacheReady, (req, res) => {
+// Get specific project
+router.get("/projects/:id", checkCacheReady, (req, res) => {
   try {
-    const address = req.params.address.toLowerCase();
-    const pair = cacheManager.getById("pairs", address);
+    const project = cacheManager.getById("projects", req.params.id);
 
-    if (!pair) {
-      return sendError(res, 404, "Pair not found");
+    if (!project) {
+      return sendError(res, 404, "Project not found");
     }
 
-    sendSuccess(res, pair, `Retrieved pair data for ${address}`);
+    sendSuccess(res, project);
   } catch (error) {
-    sendError(res, 500, "Failed to get pair", error.message);
+    sendError(res, 500, "Failed to get project", error.message);
   }
 });
 
