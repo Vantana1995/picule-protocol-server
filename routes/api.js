@@ -528,6 +528,127 @@ router.get("/checkpoints", checkCacheReady, (req, res) => {
 });
 // ============ UTILITY ENDPOINTS ============
 
+// Get multiple cache data types and parametrized data at once
+router.get("/data/:caches", checkCacheReady, (req, res) => {
+  try {
+    const requestedCaches = req.params.caches.split(',').map(cache => cache.trim());
+    const availableCaches = [
+      'icoRequests', 'contributions', 'projects', 'listings', 'sales',
+      'tokens', 'pairs', 'accounts', 'globalStats', 'marketplaceStats',
+      'checkpoints', 'lpTokens', 'bonusClaims'
+    ];
+    
+    const result = {};
+    const found = [];
+    const notFound = [];
+    
+    for (const cacheName of requestedCaches) {
+      // Check for simple cache names
+      if (availableCaches.includes(cacheName)) {
+        const data = cacheManager.get(cacheName);
+        if (data !== undefined) {
+          result[cacheName] = data;
+          found.push(cacheName);
+        } else {
+          notFound.push(cacheName);
+        }
+      }
+      // Check for token history: tokens-history-ADDRESS
+      else if (cacheName.startsWith('tokens-history-')) {
+        const address = cacheName.replace('tokens-history-', '');
+        const { timeframe = 'hour', limit = 168 } = req.query;
+        
+        try {
+          const data = cacheManager.getTokenHistoricalData(address, timeframe, parseInt(limit));
+          result[cacheName] = {
+            tokenAddress: address,
+            timeframe,
+            limit: parseInt(limit),
+            data
+          };
+          found.push(cacheName);
+        } catch (err) {
+          notFound.push(cacheName);
+        }
+      }
+      // Check for funds manager: funds-manager-ADDRESS
+      else if (cacheName.startsWith('funds-manager-')) {
+        const address = cacheName.replace('funds-manager-', '').toLowerCase();
+        
+        try {
+          const checkpoints = cacheManager.getFiltered(
+            "checkpoints",
+            (item) => item.fundsManager.id.toLowerCase() === address
+          );
+          const lpTokens = cacheManager.getFiltered(
+            "lpTokens",
+            (item) => item.fundsManager.id.toLowerCase() === address
+          );
+          const bonusClaims = cacheManager.getFiltered(
+            "bonusClaims",
+            (item) => item.fundsManager.id.toLowerCase() === address
+          );
+          
+          result[cacheName] = {
+            address,
+            checkpoints,
+            lpTokens,
+            bonusClaims,
+            totalCheckpoints: checkpoints.length,
+            totalLPTokens: lpTokens.length,
+            totalBonusClaims: bonusClaims.length,
+          };
+          found.push(cacheName);
+        } catch (err) {
+          notFound.push(cacheName);
+        }
+      }
+      // Check for account stats: account-stats-ADDRESS
+      else if (cacheName.startsWith('account-stats-')) {
+        const address = cacheName.replace('account-stats-', '').toLowerCase();
+        
+        try {
+          const account = cacheManager.getById("accounts", address);
+          if (account) {
+            const stats = {
+              usdSwapped: account.usdSwapped || "0",
+              totalContributions: account.contributions?.length || 0,
+              totalICORequests: account.icoRequests?.length || 0,
+              totalNFTs: account.ERC721tokens?.length || 0,
+              totalListings: account.listings?.length || 0,
+              totalSalesAsBuyer: account.salesAsBuyer?.length || 0,
+              totalSalesAsSeller: account.salesAsSeller?.length || 0,
+              totalProjectsCreated: account.createdProjects?.length || 0,
+              liquidityPositions: account.liquidityPositions?.length || 0,
+            };
+            result[cacheName] = stats;
+            found.push(cacheName);
+          } else {
+            notFound.push(cacheName);
+          }
+        } catch (err) {
+          notFound.push(cacheName);
+        }
+      }
+      else {
+        notFound.push(cacheName);
+      }
+    }
+    
+    sendSuccess(res, {
+      ...result,
+      _meta: {
+        requested: requestedCaches,
+        found: found,
+        notFound: notFound.length > 0 ? notFound : undefined
+      }
+    }, `Retrieved ${found.length} data types: ${found.join(', ')}`);
+    
+  } catch (error) {
+    sendError(res, 500, "Failed to get cache data", error.message);
+  }
+});
+
 // Get all data at once
 router.get("/all", checkCacheReady, (req, res) => {
   try {
